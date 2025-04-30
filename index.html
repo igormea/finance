@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Divisão da Renda</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+  <style>
+    :root {
+      --bg: #e8f5e9;
+      --bg-alt: #ffffff;
+      --text: #263238;
+      --accent: #2e7d32;
+      --shadow: rgba(0,0,0,0.1);
+    }
+    body[data-theme="dark"] {
+      --bg: #121212;
+      --bg-alt: #1e1e1e;
+      --text: #e0e0e0;
+      --accent: #81c784;
+      --shadow: rgba(255,255,255,0.05);
+    }
+    body {
+      background: var(--bg);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 1rem;
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow);
+      background: var(--bg-alt);
+      color: var(--text);
+    }
+    .form-control {
+      border-radius: 8px;
+      box-shadow: 0 1px 5px var(--shadow);
+      font-size: 0.9rem;
+      padding: 6px 10px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid #ccc;
+    }
+    .form-section {
+      margin-bottom: 1rem;
+    }
+    .results-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .results-box {
+      flex: 1;
+      min-width: 250px;
+      background: var(--bg-alt);
+      padding: 1rem;
+      border-left: 4px solid var(--accent);
+      border-radius: 10px;
+      box-shadow: 0 2px 10px var(--shadow);
+      font-size: 0.9rem;
+    }
+    .chart-container {
+      margin-top: 1rem;
+    }
+    h2, h5 {
+      color: var(--accent);
+      font-size: 1.25rem;
+    }
+    .form-label {
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    #erro {
+      color: #e53935;
+      font-size: 0.85rem;
+    }
+    canvas {
+      max-height: 200px;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <button class="btn btn-sm btn-outline-secondary theme-toggle" onclick="toggleTheme()">🌙/☀️</button>
+  <div class="container-fluid">
+    <div class="card p-3 mt-4">
+      <h2 class="text-center mb-3">Divisão da Renda</h2>
+      <div class="form-section">
+        <label for="renda" class="form-label">Renda Mensal (R$)</label>
+        <input type="number" id="renda" class="form-control" placeholder="Ex: 3000" />
+      </div>
+      <div class="form-section">
+        <h5>Distribuição da Renda (%)</h5>
+        <div class="row gx-1">
+          <div class="col">
+            <label for="p_essencial" class="form-label">Essencial</label>
+            <input type="number" id="p_essencial" class="form-control" value="55" />
+          </div>
+          <div class="col">
+            <label for="p_lazer" class="form-label">Lazer</label>
+            <input type="number" id="p_lazer" class="form-control" value="10" />
+          </div>
+          <div class="col">
+            <label for="p_educacao" class="form-label">Educação</label>
+            <input type="number" id="p_educacao" class="form-control" value="5" />
+          </div>
+          <div class="col">
+            <label for="p_investimentos" class="form-label">Investimentos</label>
+            <input type="number" id="p_investimentos" class="form-control" value="30" />
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <h5>Subdivisão dos Investimentos (%)</h5>
+        <div class="row gx-1">
+          <div class="col">
+            <label class="form-label">Curto</label>
+            <input type="number" id="p_curto" class="form-control" value="35" />
+          </div>
+          <div class="col">
+            <label class="form-label">Médio</label>
+            <input type="number" id="p_medio" class="form-control" value="25" />
+          </div>
+          <div class="col">
+            <label class="form-label">Longo</label>
+            <input type="number" id="p_longo" class="form-control" value="15" />
+          </div>
+          <div class="col">
+            <label class="form-label">Reserva</label>
+            <input type="number" id="p_reserva" class="form-control" value="15" />
+          </div>
+          <div class="col">
+            <label class="form-label">Aposentadoria</label>
+            <input type="number" id="p_aposentadoria" class="form-control" value="10" />
+          </div>
+        </div>
+      </div>
+      <div id="erro" class="fw-bold"></div>
+      <div class="results-container">
+        <div class="results-box">
+          <h5 class="text-center">Renda</h5>
+          <p>Essencial: R$ <span id="essencial"></span></p>
+          <p>Lazer: R$ <span id="lazer"></span></p>
+          <p>Educação: R$ <span id="educacao"></span></p>
+          <p>Investimentos: R$ <span id="investimentos"></span></p>
+        </div>
+        <div class="results-box">
+          <h5 class="text-center">Investimentos</h5>
+          <p>Curto: R$ <span id="curto"></span></p>
+          <p>Médio: R$ <span id="medio"></span></p>
+          <p>Longo: R$ <span id="longo"></span></p>
+          <p>Reserva: R$ <span id="reserva"></span></p>
+          <p>Aposentadoria: R$ <span id="aposentadoria"></span></p>
+        </div>
+      </div>
+      <div class="chart-container row mt-3">
+        <div class="col-md-6">
+          <canvas id="chartRenda"></canvas>
+        </div>
+        <div class="col-md-6">
+          <canvas id="chartInvestimentos"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const ids = ['renda','p_essencial','p_lazer','p_educacao','p_investimentos','p_curto','p_medio','p_longo','p_reserva','p_aposentadoria'];
+    ids.forEach(id => document.getElementById(id).addEventListener('input', calcular));
+
+    function toggleTheme() {
+      document.body.dataset.theme = document.body.dataset.theme === 'dark' ? '' : 'dark';
+    }
+
+    let chartRenda, chartInvest;
+    window.addEventListener('DOMContentLoaded', () => {
+      chartRenda = new Chart(document.getElementById('chartRenda'), {
+        type: 'bar',
+        data: {
+          labels: ['Essencial', 'Lazer', 'Educação', 'Investimentos'],
+          datasets: [{ label: 'R$', data: [0,0,0,0], backgroundColor: ['#2e7d32','#f9a825','#1565c0','#6a1b9a'] }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              formatter: (val) => `R$ ${val.toFixed(2)}`,
+              color: '#000'
+            }
+          },
+          scales: {
+            y: { beginAtZero: true },
+            x: {}
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+
+      chartInvest = new Chart(document.getElementById('chartInvestimentos'), {
+        type: 'bar',
+        data: {
+          labels: ['Curto', 'Médio', 'Longo', 'Reserva', 'Aposentadoria'],
+          datasets: [{ label: 'R$', data: [0,0,0,0,0], backgroundColor: ['#66bb6a','#ffa726','#42a5f5','#ef5350','#8d6e63'] }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            datalabels: {
+              anchor: 'end',
+              align: 'top',
+              formatter: (val) => `R$ ${val.toFixed(2)}`,
+              color: '#000'
+            }
+          },
+          scales: {
+            y: { beginAtZero: true },
+            x: {}
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    });
+
+    function calcular() {
+      const renda = parseFloat(document.getElementById('renda').value);
+      const pEssencial = parseFloat(document.getElementById('p_essencial').value);
+      const pLazer = parseFloat(document.getElementById('p_lazer').value);
+      const pEducacao = parseFloat(document.getElementById('p_educacao').value);
+      const pInvest = parseFloat(document.getElementById('p_investimentos').value);
+      const pCurto = parseFloat(document.getElementById('p_curto').value);
+      const pMedio = parseFloat(document.getElementById('p_medio').value);
+      const pLongo = parseFloat(document.getElementById('p_longo').value);
+      const pReserva = parseFloat(document.getElementById('p_reserva').value);
+      const pAposentadoria = parseFloat(document.getElementById('p_aposentadoria').value);
+
+      const erro = document.getElementById('erro');
+      const totalRenda = pEssencial + pLazer + pEducacao + pInvest;
+      const totalInvest = pCurto + pMedio + pLongo + pReserva + pAposentadoria;
+
+      if (!renda || totalRenda > 100 || totalInvest > 100) {
+        erro.textContent = totalRenda > 100 ? 'Erro: soma das porcentagens da renda > 100%.' :
+                           totalInvest > 100 ? 'Erro: soma das porcentagens dos investimentos > 100%.' : '';
+        return;
+      } else {
+        erro.textContent = '';
+      }
+
+      const vEssencial = renda * (pEssencial / 100);
+      const vLazer = renda * (pLazer / 100);
+      const vEducacao = renda * (pEducacao / 100);
+      const vInvest = renda * (pInvest / 100);
+
+      document.getElementById('essencial').textContent = vEssencial.toFixed(2);
+      document.getElementById('lazer').textContent = vLazer.toFixed(2);
+      document.getElementById('educacao').textContent = vEducacao.toFixed(2);
+      document.getElementById('investimentos').textContent = vInvest.toFixed(2);
+
+      const vCurto = vInvest * (pCurto / 100);
+      const vMedio = vInvest * (pMedio / 100);
+      const vLongo = vInvest * (pLongo / 100);
+      const vReserva = vInvest * (pReserva / 100);
+      const vAposentadoria = vInvest * (pAposentadoria / 100);
+
+      document.getElementById('curto').textContent = vCurto.toFixed(2);
+      document.getElementById('medio').textContent = vMedio.toFixed(2);
+      document.getElementById('longo').textContent = vLongo.toFixed(2);
+      document.getElementById('reserva').textContent = vReserva.toFixed(2);
+      document.getElementById('aposentadoria').textContent = vAposentadoria.toFixed(2);
+
+      chartRenda.data.datasets[0].data = [vEssencial, vLazer, vEducacao, vInvest];
+      chartInvest.data.datasets[0].data = [vCurto, vMedio, vLongo, vReserva, vAposentadoria];
+      chartRenda.update();
+      chartInvest.update();
+    }
+  </script>
+</body>
+</html>
